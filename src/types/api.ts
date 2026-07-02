@@ -33,3 +33,12 @@ export interface DashboardSummary {
   avg_purchase_quantity: string | null;
   avg_sale_quantity: number;
 }
+
+export interface Category {
+  id: number;
+  company_id: number;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
