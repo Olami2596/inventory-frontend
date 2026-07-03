@@ -24,3 +24,8 @@ export async function revokeUserSessions(id: number): Promise<RevokeSessionsResp
   const response = await apiClient.post<RevokeSessionsResponse>(`/users/${id}/revoke-tokens`);
   return response.data;
 }
+
+export async function revokeMySessions(): Promise<RevokeSessionsResponse> {
+  const response = await apiClient.post<RevokeSessionsResponse>('/me/revoke-tokens');
+  return response.data;
+}

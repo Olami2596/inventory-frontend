@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { logout } from '../../api/auth';
+import { revokeMySessions } from '../../api/users';
 import { useAuthStore } from '../../store/auth';
 import { usePermission } from '../../hooks/usePermission';
 
@@ -24,6 +25,18 @@ function Layout({ children }: LayoutProps) {
     }
   }
 
+  async function handleRevokeMySessions() {
+    if (!window.confirm('This will log you out of all devices, including this one. Continue?')) return;
+    try {
+      await revokeMySessions();
+    } catch {
+      // best-effort — user gets logged out locally regardless of outcome
+    } finally {
+      clearAuth();
+      navigate('/login');
+    }
+  }
+
   return (
     <div>
       <nav>
@@ -35,8 +48,8 @@ function Layout({ children }: LayoutProps) {
         {canManageUsers && <Link to="/invitations">Invitations</Link>}
         {canManageUsers && <Link to="/users">Users</Link>}
         <button onClick={handleLogout}>Log Out</button>
+        <button onClick={handleRevokeMySessions}>Log Out Everywhere</button>
       </nav>
-
       <main>{children}</main>
     </div>
   );
