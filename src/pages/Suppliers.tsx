@@ -46,6 +46,7 @@ function Suppliers() {
 
   useEffect(() => {
     const timer = setTimeout(() => setShowColdStartMessage(true), 5000);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSuppliers().finally(() => clearTimeout(timer));
   }, []);
 

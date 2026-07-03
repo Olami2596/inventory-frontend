@@ -1,10 +1,96 @@
 import { useState, useEffect } from 'react';
+import { Pencil, Trash2, Package, X } from 'lucide-react';
 import { getProducts, createProduct, updateProduct, deleteProduct } from '../api/products';
 import { getCategories } from '../api/categories';
 import { getSuppliers } from '../api/suppliers';
 import type { ProductWithRelations, Category, Supplier } from '../types/api';
 import { getErrorMessage, getFieldErrors } from '../utils/errors';
 import { usePermission } from '../hooks/usePermission';
+
+const inputClass =
+  'w-full bg-background border border-ink/15 rounded-lg px-3 py-2 text-sm placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors';
+
+const selectClass =
+  'w-full bg-background border border-ink/15 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors appearance-none cursor-pointer';
+
+const cardHover =
+  'transition-all duration-150 hover:border-accent/40 hover:shadow-md hover:shadow-ink/5 hover:-translate-y-0.5';
+
+function getStockRailColor(stock: number): string {
+  if (stock === 0) return 'border-l-danger';
+  if (stock < 10) return 'border-l-warning';
+  return 'border-l-accent';
+}
+
+interface ProductThumbnailProps {
+  imageUrl: string | null;
+  name: string;
+  onClick: () => void;
+}
+
+function ProductThumbnail({ imageUrl, name, onClick }: ProductThumbnailProps) {
+  const [failed, setFailed] = useState<boolean>(false);
+
+  if (!imageUrl || failed) {
+    return (
+      <div className="w-20 h-20 rounded-lg bg-ink/5 flex items-center justify-center shrink-0">
+        <Package size={28} className="text-ink/30" />
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-20 h-20 rounded-lg shrink-0 overflow-hidden bg-ink/5 focus:outline-none focus:ring-2 focus:ring-accent/40"
+      aria-label={`View larger image of ${name}`}
+    >
+      <img
+        src={imageUrl}
+        alt={name}
+        onError={() => setFailed(true)}
+        className="w-full h-full object-cover hover:scale-110 transition-transform duration-200"
+      />
+    </button>
+  );
+}
+
+interface ImageLightboxProps {
+  imageUrl: string;
+  name: string;
+  onClose: () => void;
+}
+
+function ImageLightbox({ imageUrl, name, onClose }: ImageLightboxProps) {
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-ink/80 flex items-center justify-center p-6"
+    >
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute top-4 right-4 p-2 rounded-full bg-surface/10 text-white hover:bg-surface/20 transition-colors"
+      >
+        <X size={22} />
+      </button>
+      <img
+        src={imageUrl}
+        alt={name}
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-full max-h-full rounded-xl object-contain"
+      />
+    </div>
+  );
+}
 
 function Products() {
   const [products, setProducts] = useState<ProductWithRelations[]>([]);
@@ -14,6 +100,7 @@ function Products() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showColdStartMessage, setShowColdStartMessage] = useState<boolean>(false);
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; name: string } | null>(null);
 
   const [name, setName] = useState<string>('');
   const [sku, setSku] = useState<string>('');
@@ -146,138 +233,205 @@ function Products() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-ink/60">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        <p className="mt-4 text-sm">Loading products…</p>
+        {showColdStartMessage && (
+          <p className="mt-2 text-sm text-warning max-w-xs text-center">
+            The server may be waking up from inactivity — this can take up to a minute on the first request.
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
-      <h1>Products</h1>
+      <h1 className="font-display text-2xl font-semibold tracking-tight mb-6">Products</h1>
 
-      {canManageStructure && (
-        <form onSubmit={handleCreate}>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Product name"
-          />
-          {fieldErrors.name && <span>{fieldErrors.name}</span>}
-
-          <input
-            type="text"
-            value={sku}
-            onChange={(e) => setSku(e.target.value)}
-            placeholder="SKU"
-          />
-          {fieldErrors.sku && <span>{fieldErrors.sku}</span>}
-
-          <input
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description (optional)"
-          />
-          {fieldErrors.description && <span>{fieldErrors.description}</span>}
-
-          <input
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
-            placeholder="Price"
-          />
-          {fieldErrors.price && <span>{fieldErrors.price}</span>}
-
-          <input
-            type="number"
-            value={cost}
-            onChange={(e) => setCost(Number(e.target.value))}
-            placeholder="Cost (optional)"
-          />
-          {fieldErrors.cost && <span>{fieldErrors.cost}</span>}
-
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(Number(e.target.value))}
-          >
-            <option value={0}>Select a category</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          {fieldErrors.category_id && <span>{fieldErrors.category_id}</span>}
-
-          <select
-            value={supplierId}
-            onChange={(e) => setSupplierId(Number(e.target.value))}
-          >
-            <option value={0}>Select a supplier</option>
-            {suppliers.map((supplier) => (
-              <option key={supplier.id} value={supplier.id}>
-                {supplier.name}
-              </option>
-            ))}
-          </select>
-          {fieldErrors.supplier_id && <span>{fieldErrors.supplier_id}</span>}
-
-          <input
-            type="text"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="Image URL (optional)"
-          />
-          {fieldErrors.image_url && <span>{fieldErrors.image_url}</span>}
-
-          <button type="submit">Add Product</button>
-        </form>
+      {error && (
+        <div className="bg-danger/10 border border-danger/20 text-danger rounded-xl p-4 text-sm mb-4">
+          {error}
+        </div>
       )}
 
-      {error && <p>{error}</p>}
+      {canManageStructure && (
+        <div className="bg-surface border border-ink/10 rounded-xl p-5 mb-6">
+          <form onSubmit={handleCreate} className="space-y-3">
+            <div>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Product name"
+                className={inputClass}
+              />
+              {fieldErrors.name && <p className="text-xs text-danger mt-1">{fieldErrors.name}</p>}
+            </div>
 
-      {loading ? (
-        <div>
-          <p>Loading...</p>
-          {showColdStartMessage && (
-            <p>The server may be waking up from inactivity — this can take up to a minute on the first request.</p>
-          )}
+            <div>
+              <input
+                type="text"
+                value={sku}
+                onChange={(e) => setSku(e.target.value)}
+                placeholder="SKU"
+                className={inputClass}
+              />
+              {fieldErrors.sku && <p className="text-xs text-danger mt-1">{fieldErrors.sku}</p>}
+            </div>
+
+            <div>
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Description (optional)"
+                className={inputClass}
+              />
+              {fieldErrors.description && (
+                <p className="text-xs text-danger mt-1">{fieldErrors.description}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <input
+                  type="number"
+                  value={price}
+                  onChange={(e) => setPrice(Number(e.target.value))}
+                  placeholder="Price"
+                  className={inputClass}
+                />
+                {fieldErrors.price && <p className="text-xs text-danger mt-1">{fieldErrors.price}</p>}
+              </div>
+
+              <div>
+                <input
+                  type="number"
+                  value={cost}
+                  onChange={(e) => setCost(Number(e.target.value))}
+                  placeholder="Cost (optional)"
+                  className={inputClass}
+                />
+                {fieldErrors.cost && <p className="text-xs text-danger mt-1">{fieldErrors.cost}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(Number(e.target.value))}
+                  className={selectClass}
+                >
+                  <option value={0}>Select a category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.category_id && (
+                  <p className="text-xs text-danger mt-1">{fieldErrors.category_id}</p>
+                )}
+              </div>
+
+              <div>
+                <select
+                  value={supplierId}
+                  onChange={(e) => setSupplierId(Number(e.target.value))}
+                  className={selectClass}
+                >
+                  <option value={0}>Select a supplier</option>
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.supplier_id && (
+                  <p className="text-xs text-danger mt-1">{fieldErrors.supplier_id}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <input
+                type="text"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="Image URL (optional)"
+                className={inputClass}
+              />
+              {fieldErrors.image_url && (
+                <p className="text-xs text-danger mt-1">{fieldErrors.image_url}</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              Add Product
+            </button>
+          </form>
         </div>
-      ) : (
-        <ul>
-          {products.map((product) => (
-            <li key={product.id}>
-              {editingId === product.id ? (
-                <>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="Product name"
-                  />
-                  <input
-                    type="text"
-                    value={editSku}
-                    onChange={(e) => setEditSku(e.target.value)}
-                    placeholder="SKU"
-                  />
-                  <input
-                    type="text"
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    placeholder="Description (optional)"
-                  />
+      )}
+
+      <div className="space-y-2">
+        {products.map((product) => (
+          <div
+            key={product.id}
+            className={`bg-surface border-l-[3px] ${getStockRailColor(
+              product.current_stock
+            )} border-y border-r border-ink/10 rounded-lg px-4 py-3 flex items-start justify-between gap-4 ${cardHover}`}
+          >
+            {editingId === product.id ? (
+              <div className="flex-1 space-y-3">
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Product name"
+                  className={inputClass}
+                />
+                <input
+                  type="text"
+                  value={editSku}
+                  onChange={(e) => setEditSku(e.target.value)}
+                  placeholder="SKU"
+                  className={inputClass}
+                />
+                <input
+                  type="text"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Description (optional)"
+                  className={inputClass}
+                />
+                <div className="grid grid-cols-2 gap-3">
                   <input
                     type="number"
                     value={editPrice}
                     onChange={(e) => setEditPrice(Number(e.target.value))}
                     placeholder="Price"
+                    className={inputClass}
                   />
                   <input
                     type="number"
                     value={editCost}
                     onChange={(e) => setEditCost(Number(e.target.value))}
                     placeholder="Cost (optional)"
+                    className={inputClass}
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <select
                     value={editCategoryId}
                     onChange={(e) => setEditCategoryId(Number(e.target.value))}
+                    className={selectClass}
                   >
                     <option value={0}>Select a category</option>
                     {categories.map((category) => (
@@ -289,6 +443,7 @@ function Products() {
                   <select
                     value={editSupplierId}
                     onChange={(e) => setEditSupplierId(Number(e.target.value))}
+                    className={selectClass}
                   >
                     <option value={0}>Select a supplier</option>
                     {suppliers.map((supplier) => (
@@ -297,35 +452,94 @@ function Products() {
                       </option>
                     ))}
                   </select>
-                  <input
-                    type="text"
-                    value={editImageUrl}
-                    onChange={(e) => setEditImageUrl(e.target.value)}
-                    placeholder="Image URL (optional)"
+                </div>
+                <input
+                  type="text"
+                  value={editImageUrl}
+                  onChange={(e) => setEditImageUrl(e.target.value)}
+                  placeholder="Image URL (optional)"
+                  className={inputClass}
+                />
+                {fieldErrors.name && <p className="text-xs text-danger mt-1">{fieldErrors.name}</p>}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleUpdate(product.id)}
+                    className="bg-accent text-white text-xs font-medium px-3 py-1.5 rounded-md hover:opacity-90 active:scale-[0.98] transition-all"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingId(null)}
+                    className="bg-ink/5 text-ink/70 text-xs font-medium px-3 py-1.5 rounded-md hover:bg-ink/10 active:scale-[0.98] transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col sm:flex-row gap-3 flex-1 min-w-0">
+                  <ProductThumbnail
+                    imageUrl={product.image_url}
+                    name={product.name}
+                    onClick={() =>
+                      product.image_url && setLightboxImage({ url: product.image_url, name: product.name })
+                    }
                   />
-                  {fieldErrors.name && <span>{fieldErrors.name}</span>}
-                  <button onClick={() => handleUpdate(product.id)}>Save</button>
-                  <button onClick={() => setEditingId(null)}>Cancel</button>
-                </>
-              ) : (
-                <>
-                  <strong>{product.name}</strong> ({product.sku})
-                  <span> — {product.category.name}</span>
-                  <span> — {product.supplier.name}</span>
-                  <span> — ${parseFloat(product.price).toFixed(2)}</span>
-                  <span> — Stock: {product.current_stock}</span>
-                  {product.description && <span> — {product.description}</span>}
-                  {canManageStructure && (
-                    <>
-                      <button onClick={() => startEdit(product)}>Edit</button>
-                      <button onClick={() => handleDelete(product.id)}>Delete</button>
-                    </>
-                  )}
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="font-medium text-sm">{product.name}</p>
+                    <p className="text-xs text-ink/50 font-mono">{product.sku}</p>
+                    <p className="text-sm text-ink/60">
+                      {product.category.name} · {product.supplier.name}
+                    </p>
+                    {product.description && (
+                      <p className="text-sm text-ink/60">{product.description}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <p className="font-mono text-sm font-semibold">
+                    ${parseFloat(product.price).toFixed(2)}
+                  </p>
+                  <p className="font-mono text-xs text-ink/60 mt-0.5">
+                    {product.current_stock} in stock
+                  </p>
+                </div>
+
+                {canManageStructure && (
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => startEdit(product)}
+                      aria-label="Edit product"
+                      title="Edit"
+                      className="p-1.5 rounded-md bg-ink/5 text-ink/60 hover:bg-accent/10 hover:text-accent active:scale-[0.95] transition-all"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product.id)}
+                      aria-label="Delete product"
+                      title="Delete"
+                      className="p-1.5 rounded-md bg-ink/5 text-ink/60 hover:bg-danger/10 hover:text-danger active:scale-[0.95] transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {lightboxImage && (
+        <ImageLightbox
+          imageUrl={lightboxImage.url}
+          name={lightboxImage.name}
+          onClose={() => setLightboxImage(null)}
+        />
       )}
     </div>
   );
