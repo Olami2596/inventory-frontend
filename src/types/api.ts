@@ -75,3 +75,20 @@ export interface ProductWithRelations extends Product {
   category: Category;
   supplier: Supplier;
 }
+
+export interface Transaction {
+  id: number;
+  company_id: number;
+  product_id: number;
+  created_by: number | null;
+  type: 'purchase' | 'sale' | 'adjustment';
+  quantity: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TransactionWithRelations extends Transaction {
+  product: Product;
+  creator: User | null;
+}
