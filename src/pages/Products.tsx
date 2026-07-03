@@ -4,6 +4,7 @@ import { getCategories } from '../api/categories';
 import { getSuppliers } from '../api/suppliers';
 import type { ProductWithRelations, Category, Supplier } from '../types/api';
 import { getErrorMessage, getFieldErrors } from '../utils/errors';
+import { usePermission } from '../hooks/usePermission';
 
 function Products() {
   const [products, setProducts] = useState<ProductWithRelations[]>([]);
@@ -32,6 +33,8 @@ function Products() {
   const [editCategoryId, setEditCategoryId] = useState<number>(0);
   const [editSupplierId, setEditSupplierId] = useState<number>(0);
   const [editImageUrl, setEditImageUrl] = useState<string>('');
+
+  const { canManageStructure } = usePermission();
 
   async function fetchAll() {
     try {
@@ -147,83 +150,85 @@ function Products() {
     <div>
       <h1>Products</h1>
 
-      <form onSubmit={handleCreate}>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Product name"
-        />
-        {fieldErrors.name && <span>{fieldErrors.name}</span>}
+      {canManageStructure && (
+        <form onSubmit={handleCreate}>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Product name"
+          />
+          {fieldErrors.name && <span>{fieldErrors.name}</span>}
 
-        <input
-          type="text"
-          value={sku}
-          onChange={(e) => setSku(e.target.value)}
-          placeholder="SKU"
-        />
-        {fieldErrors.sku && <span>{fieldErrors.sku}</span>}
+          <input
+            type="text"
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
+            placeholder="SKU"
+          />
+          {fieldErrors.sku && <span>{fieldErrors.sku}</span>}
 
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description (optional)"
-        />
-        {fieldErrors.description && <span>{fieldErrors.description}</span>}
+          <input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description (optional)"
+          />
+          {fieldErrors.description && <span>{fieldErrors.description}</span>}
 
-        <input
-          type="number"
-          value={price}
-          onChange={(e) => setPrice(Number(e.target.value))}
-          placeholder="Price"
-        />
-        {fieldErrors.price && <span>{fieldErrors.price}</span>}
+          <input
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(Number(e.target.value))}
+            placeholder="Price"
+          />
+          {fieldErrors.price && <span>{fieldErrors.price}</span>}
 
-        <input
-          type="number"
-          value={cost}
-          onChange={(e) => setCost(Number(e.target.value))}
-          placeholder="Cost (optional)"
-        />
-        {fieldErrors.cost && <span>{fieldErrors.cost}</span>}
+          <input
+            type="number"
+            value={cost}
+            onChange={(e) => setCost(Number(e.target.value))}
+            placeholder="Cost (optional)"
+          />
+          {fieldErrors.cost && <span>{fieldErrors.cost}</span>}
 
-        <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(Number(e.target.value))}
-        >
-          <option value={0}>Select a category</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-        {fieldErrors.category_id && <span>{fieldErrors.category_id}</span>}
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(Number(e.target.value))}
+          >
+            <option value={0}>Select a category</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          {fieldErrors.category_id && <span>{fieldErrors.category_id}</span>}
 
-        <select
-          value={supplierId}
-          onChange={(e) => setSupplierId(Number(e.target.value))}
-        >
-          <option value={0}>Select a supplier</option>
-          {suppliers.map((supplier) => (
-            <option key={supplier.id} value={supplier.id}>
-              {supplier.name}
-            </option>
-          ))}
-        </select>
-        {fieldErrors.supplier_id && <span>{fieldErrors.supplier_id}</span>}
+          <select
+            value={supplierId}
+            onChange={(e) => setSupplierId(Number(e.target.value))}
+          >
+            <option value={0}>Select a supplier</option>
+            {suppliers.map((supplier) => (
+              <option key={supplier.id} value={supplier.id}>
+                {supplier.name}
+              </option>
+            ))}
+          </select>
+          {fieldErrors.supplier_id && <span>{fieldErrors.supplier_id}</span>}
 
-        <input
-          type="text"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="Image URL (optional)"
-        />
-        {fieldErrors.image_url && <span>{fieldErrors.image_url}</span>}
+          <input
+            type="text"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="Image URL (optional)"
+          />
+          {fieldErrors.image_url && <span>{fieldErrors.image_url}</span>}
 
-        <button type="submit">Add Product</button>
-      </form>
+          <button type="submit">Add Product</button>
+        </form>
+      )}
 
       {error && <p>{error}</p>}
 
@@ -310,8 +315,12 @@ function Products() {
                   <span> — ${parseFloat(product.price).toFixed(2)}</span>
                   <span> — Stock: {product.current_stock}</span>
                   {product.description && <span> — {product.description}</span>}
-                  <button onClick={() => startEdit(product)}>Edit</button>
-                  <button onClick={() => handleDelete(product.id)}>Delete</button>
+                  {canManageStructure && (
+                    <>
+                      <button onClick={() => startEdit(product)}>Edit</button>
+                      <button onClick={() => handleDelete(product.id)}>Delete</button>
+                    </>
+                  )}
                 </>
               )}
             </li>

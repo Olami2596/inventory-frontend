@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../api/suppliers';
 import type { Supplier } from '../types/api';
 import { getErrorMessage, getFieldErrors } from '../utils/errors';
+import { usePermission } from '../hooks/usePermission';
 
 function Suppliers() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -22,6 +23,8 @@ function Suppliers() {
   const [editEmail, setEditEmail] = useState<string>('');
   const [editPhone, setEditPhone] = useState<string>('');
   const [editAddress, setEditAddress] = useState<string>('');
+
+  const { canManageStructure } = usePermission();
 
   async function fetchSuppliers() {
     try {
@@ -106,49 +109,53 @@ function Suppliers() {
   return (
     <div>
       <h1>Suppliers</h1>
-      <form onSubmit={handleCreate}>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Supplier name"
-        />
-        {fieldErrors.name && <span>{fieldErrors.name}</span>}
 
-        <input
-          type="text"
-          value={contactName}
-          onChange={(e) => setContactName(e.target.value)}
-          placeholder="Contact name (optional)"
-        />
-        {fieldErrors.contact_name && <span>{fieldErrors.contact_name}</span>}
+      {canManageStructure && (
+        <form onSubmit={handleCreate}>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Supplier name"
+          />
+          {fieldErrors.name && <span>{fieldErrors.name}</span>}
 
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email (optional)"
-        />
-        {fieldErrors.email && <span>{fieldErrors.email}</span>}
+          <input
+            type="text"
+            value={contactName}
+            onChange={(e) => setContactName(e.target.value)}
+            placeholder="Contact name (optional)"
+          />
+          {fieldErrors.contact_name && <span>{fieldErrors.contact_name}</span>}
 
-        <input
-          type="text"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="Phone (optional)"
-        />
-        {fieldErrors.phone && <span>{fieldErrors.phone}</span>}
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email (optional)"
+          />
+          {fieldErrors.email && <span>{fieldErrors.email}</span>}
 
-        <input
-          type="text"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder="Address (optional)"
-        />
-        {fieldErrors.address && <span>{fieldErrors.address}</span>}
+          <input
+            type="text"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Phone (optional)"
+          />
+          {fieldErrors.phone && <span>{fieldErrors.phone}</span>}
 
-        <button type="submit">Add Supplier</button>
-      </form>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Address (optional)"
+          />
+          {fieldErrors.address && <span>{fieldErrors.address}</span>}
+
+          <button type="submit">Add Supplier</button>
+        </form>
+      )}
+
       {error && <p>{error}</p>}
       {loading ? (
         <div>
@@ -203,8 +210,12 @@ function Suppliers() {
                   {supplier.email && <span> — {supplier.email}</span>}
                   {supplier.phone && <span> — {supplier.phone}</span>}
                   {supplier.address && <span> — {supplier.address}</span>}
-                  <button onClick={() => startEdit(supplier)}>Edit</button>
-                  <button onClick={() => handleDelete(supplier.id)}>Delete</button>
+                  {canManageStructure && (
+                    <>
+                      <button onClick={() => startEdit(supplier)}>Edit</button>
+                      <button onClick={() => handleDelete(supplier.id)}>Delete</button>
+                    </>
+                  )}
                 </>
               )}
             </li>

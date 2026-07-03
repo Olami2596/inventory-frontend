@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../api/categories';
 import type { Category } from '../types/api';
 import { getErrorMessage, getFieldErrors } from '../utils/errors';
+import { usePermission } from '../hooks/usePermission';
 
 function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -16,6 +17,8 @@ function Categories() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState<string>('');
   const [editDescription, setEditDescription] = useState<string>('');
+
+  const { canManageStructure } = usePermission();
 
   async function fetchCategories() {
     try {
@@ -82,25 +85,29 @@ function Categories() {
   return (
     <div>
       <h1>Categories</h1>
-      <form onSubmit={handleCreate}>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Category name"
-        />
-        {fieldErrors.name && <span>{fieldErrors.name}</span>}
 
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description (optional)"
-        />
-        {fieldErrors.description && <span>{fieldErrors.description}</span>}
+      {canManageStructure && (
+        <form onSubmit={handleCreate}>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Category name"
+          />
+          {fieldErrors.name && <span>{fieldErrors.name}</span>}
 
-        <button type="submit">Add Category</button>
-      </form>
+          <input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description (optional)"
+          />
+          {fieldErrors.description && <span>{fieldErrors.description}</span>}
+
+          <button type="submit">Add Category</button>
+        </form>
+      )}
+
       {error && <p>{error}</p>}
       {loading ? (
         <div>
@@ -134,8 +141,12 @@ function Categories() {
                 <>
                   <strong>{category.name}</strong>
                   {category.description && <span> — {category.description}</span>}
-                  <button onClick={() => startEdit(category)}>Edit</button>
-                  <button onClick={() => handleDelete(category.id)}>Delete</button>
+                  {canManageStructure && (
+                    <>
+                      <button onClick={() => startEdit(category)}>Edit</button>
+                      <button onClick={() => handleDelete(category.id)}>Delete</button>
+                    </>
+                  )}
                 </>
               )}
             </li>

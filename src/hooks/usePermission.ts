@@ -27,6 +27,7 @@ export function usePermission() {
     isOwner: user?.role === 'owner',
     isAdmin: user?.role === 'admin',
     canManageUsers: user?.role === 'owner' || user?.role === 'admin',
+    canManageStructure: user?.role === 'owner' || user?.role === 'admin',
     canDeactivate,
     canReactivate,
     canRevokeSessions,
