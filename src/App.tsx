@@ -57,7 +57,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/invitations" element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRoles={['owner', 'admin']}>
             <Invitations />
           </ProtectedRoute>
         } />

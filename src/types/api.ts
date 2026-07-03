@@ -92,3 +92,16 @@ export interface TransactionWithRelations extends Transaction {
   product: Product;
   creator: User | null;
 }
+
+export interface Invitation {
+  id: number;
+  company_id: number;
+  email: string;
+  role: 'admin' | 'staff';
+  token: string;
+  expires_at: string;
+  accepted_at: string | null;
+  cancelled_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
