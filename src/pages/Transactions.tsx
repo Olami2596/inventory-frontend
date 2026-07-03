@@ -3,6 +3,7 @@ import { getTransactions, createTransaction } from '../api/transactions';
 import { getProducts } from '../api/products';
 import type { TransactionWithRelations, ProductWithRelations } from '../types/api';
 import { getErrorMessage, getFieldErrors } from '../utils/errors';
+import { format, parseISO } from 'date-fns';
 
 function getSignedQuantity(
   type: 'purchase' | 'sale' | 'adjustment',
@@ -162,6 +163,7 @@ function Transactions() {
               <span> — {transaction.quantity}</span>
               {transaction.notes && <span> — {transaction.notes}</span>}
               {transaction.creator?.name && <span> — by {transaction.creator.name}</span>}
+              <span> — {format(parseISO(transaction.created_at), 'MMM d, yyyy h:mm a')}</span>
             </li>
           ))}
         </ul>

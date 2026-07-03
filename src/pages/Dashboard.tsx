@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getDashboard } from '../api/dashboard';
 import type { DashboardSummary } from '../types/api';
 import { getErrorMessage } from '../utils/errors';
+import { format, parseISO } from 'date-fns';
 
 function Dashboard() {
   const [data, setData] = useState<DashboardSummary | null>(null);
@@ -67,6 +68,37 @@ function Dashboard() {
           : 'N/A'}
       </p>
       <p>Avg Sale Quantity: {data.avg_sale_quantity}</p>
+
+      <h2>Low Stock Products</h2>
+      {data.low_stock_products.length === 0 ? (
+        <p>No products are currently low on stock.</p>
+      ) : (
+        <ul>
+          {data.low_stock_products.map((product) => (
+            <li key={product.id}>
+              <strong>{product.name}</strong>
+              <span> — Stock: {product.current_stock}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h2>Recent Transactions</h2>
+      {data.recent_transactions.length === 0 ? (
+        <p>No recent transactions.</p>
+      ) : (
+        <ul>
+          {data.recent_transactions.map((transaction) => (
+            <li key={transaction.id}>
+              <strong>{transaction.product.name}</strong>
+              <span> — {transaction.type}</span>
+              <span> — {transaction.quantity}</span>
+              {transaction.creator?.name && <span> — by {transaction.creator.name}</span>}
+              <span> — {format(parseISO(transaction.created_at), 'MMM d, yyyy h:mm a')}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

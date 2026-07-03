@@ -26,6 +26,8 @@ export interface DashboardSummary {
   total_suppliers: number;
   total_sale_value: string;
   total_cost_value: string;
+  low_stock_products: Product[];
+  recent_transactions: TransactionWithRelations[];
   units_sold_this_week: number;
   units_sold_last_week: number;
   units_sold_this_month: number;
