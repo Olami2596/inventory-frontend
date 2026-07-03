@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FolderTree, Truck, Package, ArrowLeftRight,
   Mail, Users as UsersIcon, Moon, Sun, LogOut, ShieldOff,
@@ -62,8 +62,8 @@ function Layout({ children }: LayoutProps) {
     ...(canManageUsers ? [{ to: '/users', label: 'Users', icon: UsersIcon }] : []),
   ];
 
-  const linkClass =
-    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-ink/70 hover:bg-accent/10 hover:text-accent transition-colors';
+  const baseLinkClass = 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors';
+  const linkClass = `${baseLinkClass} text-ink/70 hover:bg-accent/10 hover:text-accent`;
 
   return (
     <div className="bg-background text-ink min-h-screen">
@@ -111,16 +111,22 @@ function Layout({ children }: LayoutProps) {
 
         <nav className="flex-1 px-3 space-y-1">
           {navItems.map(({ to, label, icon: Icon }) => (
-            <Link
+            <NavLink
               key={to}
               to={to}
-              className={linkClass}
+              className={({ isActive }) =>
+                `${baseLinkClass} ${
+                  isActive
+                    ? 'bg-accent/10 text-accent'
+                    : 'text-ink/70 hover:bg-accent/10 hover:text-accent'
+                }`
+              }
               onClick={() => setSidebarOpen(false)}
               title={desktopCollapsed ? label : undefined}
             >
               <Icon size={18} className="shrink-0" />
               <span className={desktopCollapsed ? 'md:hidden' : ''}>{label}</span>
-            </Link>
+            </NavLink>
           ))}
         </nav>
 
