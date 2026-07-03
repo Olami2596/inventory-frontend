@@ -4,6 +4,10 @@ import type { DashboardSummary } from '../types/api';
 import { getErrorMessage } from '../utils/errors';
 import { format, parseISO } from 'date-fns';
 
+function getRailColor(quantity: number): string {
+  return quantity >= 0 ? 'border-l-accent' : 'border-l-danger';
+}
+
 function Dashboard() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -28,17 +32,24 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div>
-        <p>Loading...</p>
+      <div className="flex flex-col items-center justify-center py-24 text-ink/60">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        <p className="mt-4 text-sm">Loading dashboard…</p>
         {showColdStartMessage && (
-          <p>The server may be waking up from inactivity — this can take up to a minute on the first request.</p>
+          <p className="mt-2 text-sm text-warning max-w-xs text-center">
+            The server may be waking up from inactivity — this can take up to a minute on the first request.
+          </p>
         )}
       </div>
     );
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return (
+      <div className="bg-danger/10 border border-danger/20 text-danger rounded-xl p-4 text-sm">
+        {error}
+      </div>
+    );
   }
 
   if (!data) {
@@ -47,58 +58,113 @@ function Dashboard() {
 
   return (
     <div>
-      <h1>Dashboard</h1>
+      <h1 className="font-display text-2xl font-semibold tracking-tight mb-6">Dashboard</h1>
 
-      <p>Total Products: {data.total_products}</p>
-      <p>Total Categories: {data.total_categories}</p>
-      <p>Total Suppliers: {data.total_suppliers}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-surface border border-ink/10 rounded-xl p-5">
+          <p className="text-sm text-ink/60 font-medium">Total Products</p>
+          <p className="font-mono text-3xl font-semibold mt-2">{data.total_products}</p>
+        </div>
 
-      <p>Total Sale Value: {parseFloat(data.total_sale_value).toFixed(2)}</p>
-      <p>Total Cost Value: {parseFloat(data.total_cost_value).toFixed(2)}</p>
+        <div className="bg-surface border border-ink/10 rounded-xl p-5">
+          <p className="text-sm text-ink/60 font-medium">Total Categories</p>
+          <p className="font-mono text-3xl font-semibold mt-2">{data.total_categories}</p>
+        </div>
 
-      <p>Units Sold This Week: {data.units_sold_this_week}</p>
-      <p>Units Sold Last Week: {data.units_sold_last_week}</p>
-      <p>Units Sold This Month: {data.units_sold_this_month}</p>
-      <p>Units Sold Last Month: {data.units_sold_last_month}</p>
+        <div className="bg-surface border border-ink/10 rounded-xl p-5">
+          <p className="text-sm text-ink/60 font-medium">Total Suppliers</p>
+          <p className="font-mono text-3xl font-semibold mt-2">{data.total_suppliers}</p>
+        </div>
 
-      <p>
-        Avg Purchase Quantity:{' '}
-        {data.avg_purchase_quantity !== null
-          ? parseFloat(data.avg_purchase_quantity).toFixed(2)
-          : 'N/A'}
-      </p>
-      <p>Avg Sale Quantity: {data.avg_sale_quantity}</p>
+        <div className="bg-surface border border-ink/10 rounded-xl p-5">
+          <p className="text-sm text-ink/60 font-medium">Total Sale Value</p>
+          <p className="font-mono text-3xl font-semibold mt-2">
+            ${parseFloat(data.total_sale_value).toFixed(2)}
+          </p>
+        </div>
+      </div>
 
-      <h2>Low Stock Products</h2>
-      {data.low_stock_products.length === 0 ? (
-        <p>No products are currently low on stock.</p>
-      ) : (
-        <ul>
-          {data.low_stock_products.map((product) => (
-            <li key={product.id}>
-              <strong>{product.name}</strong>
-              <span> — Stock: {product.current_stock}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+        <div className="bg-surface border border-ink/10 rounded-xl p-4">
+          <p className="text-xs text-ink/60 font-medium">Total Cost Value</p>
+          <p className="font-mono text-lg font-semibold mt-1">
+            ${parseFloat(data.total_cost_value).toFixed(2)}
+          </p>
+        </div>
 
-      <h2>Recent Transactions</h2>
-      {data.recent_transactions.length === 0 ? (
-        <p>No recent transactions.</p>
-      ) : (
-        <ul>
-          {data.recent_transactions.map((transaction) => (
-            <li key={transaction.id}>
-              <strong>{transaction.product.name}</strong>
-              <span> — {transaction.type}</span>
-              <span> — {transaction.quantity}</span>
-              {transaction.creator?.name && <span> — by {transaction.creator.name}</span>}
-              <span> — {format(parseISO(transaction.created_at), 'MMM d, yyyy h:mm a')}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+        <div className="bg-surface border border-ink/10 rounded-xl p-4">
+          <p className="text-xs text-ink/60 font-medium">Units Sold This Week</p>
+          <p className="font-mono text-lg font-semibold mt-1">{data.units_sold_this_week}</p>
+        </div>
+
+        <div className="bg-surface border border-ink/10 rounded-xl p-4">
+          <p className="text-xs text-ink/60 font-medium">Units Sold Last Week</p>
+          <p className="font-mono text-lg font-semibold mt-1">{data.units_sold_last_week}</p>
+        </div>
+
+        <div className="bg-surface border border-ink/10 rounded-xl p-4">
+          <p className="text-xs text-ink/60 font-medium">Units Sold This Month</p>
+          <p className="font-mono text-lg font-semibold mt-1">{data.units_sold_this_month}</p>
+        </div>
+
+        <div className="bg-surface border border-ink/10 rounded-xl p-4">
+          <p className="text-xs text-ink/60 font-medium">Units Sold Last Month</p>
+          <p className="font-mono text-lg font-semibold mt-1">{data.units_sold_last_month}</p>
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="font-display text-lg font-semibold mb-3">Low Stock Products</h2>
+        {data.low_stock_products.length === 0 ? (
+          <p className="text-sm text-ink/60">No products are currently low on stock.</p>
+        ) : (
+          <div className="space-y-2">
+            {data.low_stock_products.map((product) => (
+              <div
+                key={product.id}
+                className="flex items-center justify-between bg-surface border-l-[3px] border-l-warning border-y border-r border-ink/10 rounded-lg px-4 py-3"
+              >
+                <span className="font-medium text-sm">{product.name}</span>
+                <span className="font-mono text-sm text-warning font-semibold">
+                  {product.current_stock} left
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-8">
+        <h2 className="font-display text-lg font-semibold mb-3">Recent Transactions</h2>
+        {data.recent_transactions.length === 0 ? (
+          <p className="text-sm text-ink/60">No recent transactions.</p>
+        ) : (
+          <div className="space-y-2">
+            {data.recent_transactions.map((transaction) => (
+              <div
+                key={transaction.id}
+                className={`flex items-center justify-between bg-surface border-l-[3px] ${getRailColor(
+                  transaction.quantity
+                )} border-y border-r border-ink/10 rounded-lg px-4 py-3`}
+              >
+                <div>
+                  <span className="font-medium text-sm">{transaction.product.name}</span>
+                  <span className="text-sm text-ink/60"> — {transaction.type}</span>
+                  {transaction.creator?.name && (
+                    <span className="text-sm text-ink/60"> — by {transaction.creator.name}</span>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="font-mono text-sm font-semibold">{transaction.quantity}</p>
+                  <p className="text-xs text-ink/60">
+                    {format(parseISO(transaction.created_at), 'MMM d, yyyy h:mm a')}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
