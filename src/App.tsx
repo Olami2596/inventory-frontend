@@ -15,6 +15,7 @@ import Invitations from './pages/Invitations';
 import Users from './pages/Users';
 
 import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/layout/Layout';
 
 function App() {
   return (
@@ -22,7 +23,9 @@ function App() {
       <Routes>
         <Route path="/" element={
           <ProtectedRoute>
-            <Dashboard />
+            <Layout>
+              <Dashboard />
+            </Layout>
           </ProtectedRoute>
         } />
         <Route path="/login" element={<Login />} />
@@ -33,37 +36,51 @@ function App() {
 
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <Dashboard />
+            <Layout>
+              <Dashboard />
+            </Layout>
           </ProtectedRoute>
         } />
         <Route path="/categories" element={
           <ProtectedRoute>
-            <Categories />
+            <Layout>
+              <Categories />
+            </Layout>
           </ProtectedRoute>
         } />
         <Route path="/suppliers" element={
           <ProtectedRoute>
-            <Suppliers />
+            <Layout>
+              <Suppliers />
+            </Layout>
           </ProtectedRoute>
         } />
         <Route path="/products" element={
           <ProtectedRoute>
-            <Products />
+            <Layout>
+              <Products />
+            </Layout>
           </ProtectedRoute>
         } />
         <Route path="/transactions" element={
           <ProtectedRoute>
-            <Transactions />
+            <Layout>
+              <Transactions />
+            </Layout>
           </ProtectedRoute>
         } />
         <Route path="/invitations" element={
           <ProtectedRoute requiredRoles={['owner', 'admin']}>
-            <Invitations />
+            <Layout>
+              <Invitations />
+            </Layout>
           </ProtectedRoute>
         } />
         <Route path="/users" element={
           <ProtectedRoute requiredRoles={['owner', 'admin']}>
-            <Users />
+            <Layout>
+              <Users />
+            </Layout>
           </ProtectedRoute>
         } />
 
