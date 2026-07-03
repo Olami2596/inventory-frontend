@@ -54,3 +54,24 @@ export interface Supplier {
   created_at: string;
   updated_at: string;
 }
+
+export interface Product {
+  id: number;
+  company_id: number;
+  category_id: number;
+  supplier_id: number;
+  name: string;
+  sku: string;
+  description: string | null;
+  price: string;
+  cost: string | null;
+  current_stock: number;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductWithRelations extends Product {
+  category: Category;
+  supplier: Supplier;
+}
