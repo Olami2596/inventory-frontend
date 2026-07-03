@@ -16,6 +16,7 @@ import Users from './pages/Users';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/layout/Layout';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -84,7 +85,7 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="*" element={<div>404 - Page not found</div>} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

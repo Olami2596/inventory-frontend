@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { login } from '../../api/auth';
 import { useAuthStore } from '../../store/auth';
 import { getErrorMessage, getFieldErrors } from '../../utils/errors';
@@ -12,6 +12,11 @@ function Login() {
 
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const token = useAuthStore((state) => state.token);
+
+  if (token) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

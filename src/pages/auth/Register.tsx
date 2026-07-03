@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { register } from '../../api/auth';
 import { useAuthStore } from '../../store/auth';
 import { getErrorMessage, getFieldErrors } from '../../utils/errors';
@@ -31,6 +31,11 @@ function Register() {
 
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const token = useAuthStore((state) => state.token);
+
+  if (token) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
@@ -41,6 +46,11 @@ function Register() {
     e.preventDefault();
     setError(null);
     setFieldErrors({});
+
+    if (formData.owner_password !== formData.owner_password_confirmation) {
+      setError('Passwords do not match.');
+      return;
+    }
 
     try {
       const { user, token } = await register({

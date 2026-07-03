@@ -27,6 +27,11 @@ function AcceptInvite() {
       return;
     }
 
+    if (password !== passwordConfirmation) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     try {
       const { user, token: authToken } = await acceptInvitation(token, {
         name,

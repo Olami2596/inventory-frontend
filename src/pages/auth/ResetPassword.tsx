@@ -24,6 +24,11 @@ function ResetPassword() {
       return;
     }
 
+    if (password !== passwordConfirmation) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     try {
       const response = await resetPassword({
         token,
