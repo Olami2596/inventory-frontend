@@ -8,6 +8,9 @@ function getRailColor(quantity: number): string {
   return quantity >= 0 ? 'border-l-accent' : 'border-l-danger';
 }
 
+const cardHover =
+  'transition-all duration-150 hover:border-accent/40 hover:shadow-md hover:shadow-ink/5 hover:-translate-y-0.5';
+
 function Dashboard() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -61,22 +64,22 @@ function Dashboard() {
       <h1 className="font-display text-2xl font-semibold tracking-tight mb-6">Dashboard</h1>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-surface border border-ink/10 rounded-xl p-5">
+        <div className={`bg-surface border border-ink/10 rounded-xl p-5 ${cardHover}`}>
           <p className="text-sm text-ink/60 font-medium">Total Products</p>
           <p className="font-mono text-3xl font-semibold mt-2">{data.total_products}</p>
         </div>
 
-        <div className="bg-surface border border-ink/10 rounded-xl p-5">
+        <div className={`bg-surface border border-ink/10 rounded-xl p-5 ${cardHover}`}>
           <p className="text-sm text-ink/60 font-medium">Total Categories</p>
           <p className="font-mono text-3xl font-semibold mt-2">{data.total_categories}</p>
         </div>
 
-        <div className="bg-surface border border-ink/10 rounded-xl p-5">
+        <div className={`bg-surface border border-ink/10 rounded-xl p-5 ${cardHover}`}>
           <p className="text-sm text-ink/60 font-medium">Total Suppliers</p>
           <p className="font-mono text-3xl font-semibold mt-2">{data.total_suppliers}</p>
         </div>
 
-        <div className="bg-surface border border-ink/10 rounded-xl p-5">
+        <div className={`bg-surface border border-ink/10 rounded-xl p-5 ${cardHover}`}>
           <p className="text-sm text-ink/60 font-medium">Total Sale Value</p>
           <p className="font-mono text-3xl font-semibold mt-2">
             ${parseFloat(data.total_sale_value).toFixed(2)}
@@ -85,29 +88,29 @@ function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
-        <div className="bg-surface border border-ink/10 rounded-xl p-4">
+        <div className={`bg-surface border border-ink/10 rounded-xl p-4 ${cardHover}`}>
           <p className="text-xs text-ink/60 font-medium">Total Cost Value</p>
           <p className="font-mono text-lg font-semibold mt-1">
             ${parseFloat(data.total_cost_value).toFixed(2)}
           </p>
         </div>
 
-        <div className="bg-surface border border-ink/10 rounded-xl p-4">
+        <div className={`bg-surface border border-ink/10 rounded-xl p-4 ${cardHover}`}>
           <p className="text-xs text-ink/60 font-medium">Units Sold This Week</p>
           <p className="font-mono text-lg font-semibold mt-1">{data.units_sold_this_week}</p>
         </div>
 
-        <div className="bg-surface border border-ink/10 rounded-xl p-4">
+        <div className={`bg-surface border border-ink/10 rounded-xl p-4 ${cardHover}`}>
           <p className="text-xs text-ink/60 font-medium">Units Sold Last Week</p>
           <p className="font-mono text-lg font-semibold mt-1">{data.units_sold_last_week}</p>
         </div>
 
-        <div className="bg-surface border border-ink/10 rounded-xl p-4">
+        <div className={`bg-surface border border-ink/10 rounded-xl p-4 ${cardHover}`}>
           <p className="text-xs text-ink/60 font-medium">Units Sold This Month</p>
           <p className="font-mono text-lg font-semibold mt-1">{data.units_sold_this_month}</p>
         </div>
 
-        <div className="bg-surface border border-ink/10 rounded-xl p-4">
+        <div className={`bg-surface border border-ink/10 rounded-xl p-4 ${cardHover}`}>
           <p className="text-xs text-ink/60 font-medium">Units Sold Last Month</p>
           <p className="font-mono text-lg font-semibold mt-1">{data.units_sold_last_month}</p>
         </div>
@@ -122,7 +125,7 @@ function Dashboard() {
             {data.low_stock_products.map((product) => (
               <div
                 key={product.id}
-                className="flex items-center justify-between bg-surface border-l-[3px] border-l-warning border-y border-r border-ink/10 rounded-lg px-4 py-3"
+                className={`flex items-center justify-between bg-surface border-l-[3px] border-l-warning border-y border-r border-ink/10 rounded-lg px-4 py-3 ${cardHover}`}
               >
                 <span className="font-medium text-sm">{product.name}</span>
                 <span className="font-mono text-sm text-warning font-semibold">
@@ -145,7 +148,7 @@ function Dashboard() {
                 key={transaction.id}
                 className={`flex items-center justify-between bg-surface border-l-[3px] ${getRailColor(
                   transaction.quantity
-                )} border-y border-r border-ink/10 rounded-lg px-4 py-3`}
+                )} border-y border-r border-ink/10 rounded-lg px-4 py-3 ${cardHover}`}
               >
                 <div>
                   <span className="font-medium text-sm">{transaction.product.name}</span>
