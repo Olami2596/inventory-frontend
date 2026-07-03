@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { resetPassword } from '../../api/auth';
+import { getErrorMessage, getFieldErrors } from '../../utils/errors';
 
 function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -10,11 +11,13 @@ function ResetPassword() {
   const [passwordConfirmation, setPasswordConfirmation] = useState<string>('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMessage(null);
     setError(null);
+    setFieldErrors({});
 
     if (!token) {
       setError('Missing or invalid reset token. Please use the link from your email.');
@@ -29,7 +32,8 @@ function ResetPassword() {
       });
       setMessage(response.message);
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError(getErrorMessage(err));
+      setFieldErrors(getFieldErrors(err));
     }
   }
 
@@ -41,12 +45,16 @@ function ResetPassword() {
         onChange={(e) => setPassword(e.target.value)}
         placeholder="New Password"
       />
+      {fieldErrors.password && <span>{fieldErrors.password}</span>}
+
       <input
         type="password"
         value={passwordConfirmation}
         onChange={(e) => setPasswordConfirmation(e.target.value)}
         placeholder="Confirm New Password"
       />
+      {fieldErrors.password_confirmation && <span>{fieldErrors.password_confirmation}</span>}
+
       {error && <p>{error}</p>}
       {message && (
         <div>

@@ -3,6 +3,7 @@ import { getProducts, createProduct, updateProduct, deleteProduct } from '../api
 import { getCategories } from '../api/categories';
 import { getSuppliers } from '../api/suppliers';
 import type { ProductWithRelations, Category, Supplier } from '../types/api';
+import { getErrorMessage, getFieldErrors } from '../utils/errors';
 
 function Products() {
   const [products, setProducts] = useState<ProductWithRelations[]>([]);
@@ -10,6 +11,8 @@ function Products() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showColdStartMessage, setShowColdStartMessage] = useState<boolean>(false);
 
   const [name, setName] = useState<string>('');
   const [sku, setSku] = useState<string>('');
@@ -41,20 +44,22 @@ function Products() {
       setCategories(categoriesResult);
       setSuppliers(suppliersResult);
     } catch (err) {
-      setError('Failed to load product data.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    const timer = setTimeout(() => setShowColdStartMessage(true), 5000);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchAll();
+    fetchAll().finally(() => clearTimeout(timer));
   }, []);
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
     if (categoryId === 0 || supplierId === 0) {
       setError('Please select a category and a supplier.');
@@ -82,7 +87,8 @@ function Products() {
       setImageUrl('');
       await fetchAll();
     } catch (err) {
-      setError('Failed to create product.');
+      setError(getErrorMessage(err));
+      setFieldErrors(getFieldErrors(err));
     }
   }
 
@@ -99,6 +105,9 @@ function Products() {
   }
 
   async function handleUpdate(id: number) {
+    setError(null);
+    setFieldErrors({});
+
     if (editCategoryId === 0 || editSupplierId === 0) {
       setError('Please select a category and a supplier.');
       return;
@@ -118,7 +127,8 @@ function Products() {
       setEditingId(null);
       await fetchAll();
     } catch (err) {
-      setError('Failed to update product.');
+      setError(getErrorMessage(err));
+      setFieldErrors(getFieldErrors(err));
     }
   }
 
@@ -129,7 +139,7 @@ function Products() {
       await deleteProduct(id);
       await fetchAll();
     } catch (err) {
-      setError('Failed to delete product.');
+      setError(getErrorMessage(err));
     }
   }
 
@@ -144,30 +154,40 @@ function Products() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Product name"
         />
+        {fieldErrors.name && <span>{fieldErrors.name}</span>}
+
         <input
           type="text"
           value={sku}
           onChange={(e) => setSku(e.target.value)}
           placeholder="SKU"
         />
+        {fieldErrors.sku && <span>{fieldErrors.sku}</span>}
+
         <input
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Description (optional)"
         />
+        {fieldErrors.description && <span>{fieldErrors.description}</span>}
+
         <input
           type="number"
           value={price}
           onChange={(e) => setPrice(Number(e.target.value))}
           placeholder="Price"
         />
+        {fieldErrors.price && <span>{fieldErrors.price}</span>}
+
         <input
           type="number"
           value={cost}
           onChange={(e) => setCost(Number(e.target.value))}
           placeholder="Cost (optional)"
         />
+        {fieldErrors.cost && <span>{fieldErrors.cost}</span>}
+
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(Number(e.target.value))}
@@ -179,6 +199,8 @@ function Products() {
             </option>
           ))}
         </select>
+        {fieldErrors.category_id && <span>{fieldErrors.category_id}</span>}
+
         <select
           value={supplierId}
           onChange={(e) => setSupplierId(Number(e.target.value))}
@@ -190,19 +212,28 @@ function Products() {
             </option>
           ))}
         </select>
+        {fieldErrors.supplier_id && <span>{fieldErrors.supplier_id}</span>}
+
         <input
           type="text"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
           placeholder="Image URL (optional)"
         />
+        {fieldErrors.image_url && <span>{fieldErrors.image_url}</span>}
+
         <button type="submit">Add Product</button>
       </form>
 
       {error && <p>{error}</p>}
 
       {loading ? (
-        <p>Loading...</p>
+        <div>
+          <p>Loading...</p>
+          {showColdStartMessage && (
+            <p>The server may be waking up from inactivity — this can take up to a minute on the first request.</p>
+          )}
+        </div>
       ) : (
         <ul>
           {products.map((product) => (
@@ -267,6 +298,7 @@ function Products() {
                     onChange={(e) => setEditImageUrl(e.target.value)}
                     placeholder="Image URL (optional)"
                   />
+                  {fieldErrors.name && <span>{fieldErrors.name}</span>}
                   <button onClick={() => handleUpdate(product.id)}>Save</button>
                   <button onClick={() => setEditingId(null)}>Cancel</button>
                 </>

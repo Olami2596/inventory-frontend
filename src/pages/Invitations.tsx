@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { getInvitations, sendInvitation, cancelInvitation } from '../api/invitations';
 import { getInvitationStatus } from '../utils/invitationStatus';
 import type { Invitation } from '../types/api';
+import { getErrorMessage, getFieldErrors } from '../utils/errors';
 
 function Invitations() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showColdStartMessage, setShowColdStartMessage] = useState<boolean>(false);
 
   const [email, setEmail] = useState<string>('');
   const [role, setRole] = useState<'admin' | 'staff'>('staff');
@@ -16,20 +19,22 @@ function Invitations() {
       const result = await getInvitations();
       setInvitations(result);
     } catch (err) {
-      setError('Failed to load invitations.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    const timer = setTimeout(() => setShowColdStartMessage(true), 5000);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchInvitations();
+    fetchInvitations().finally(() => clearTimeout(timer));
   }, []);
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
     try {
       await sendInvitation({ email, role });
@@ -37,7 +42,8 @@ function Invitations() {
       setRole('staff');
       await fetchInvitations();
     } catch (err) {
-      setError('Failed to send invitation.');
+      setError(getErrorMessage(err));
+      setFieldErrors(getFieldErrors(err));
     }
   }
 
@@ -48,7 +54,7 @@ function Invitations() {
       await cancelInvitation(id);
       await fetchInvitations();
     } catch (err) {
-      setError('Failed to cancel invitation.');
+      setError(getErrorMessage(err));
     }
   }
 
@@ -63,6 +69,8 @@ function Invitations() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
         />
+        {fieldErrors.email && <span>{fieldErrors.email}</span>}
+
         <select
           value={role}
           onChange={(e) => setRole(e.target.value as 'admin' | 'staff')}
@@ -70,13 +78,20 @@ function Invitations() {
           <option value="staff">Staff</option>
           <option value="admin">Admin</option>
         </select>
+        {fieldErrors.role && <span>{fieldErrors.role}</span>}
+
         <button type="submit">Send Invitation</button>
       </form>
 
       {error && <p>{error}</p>}
 
       {loading ? (
-        <p>Loading...</p>
+        <div>
+          <p>Loading...</p>
+          {showColdStartMessage && (
+            <p>The server may be waking up from inactivity — this can take up to a minute on the first request.</p>
+          )}
+        </div>
       ) : (
         <ul>
           {invitations.map((invitation) => {

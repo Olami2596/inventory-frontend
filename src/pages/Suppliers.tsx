@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../api/suppliers';
 import type { Supplier } from '../types/api';
+import { getErrorMessage, getFieldErrors } from '../utils/errors';
 
 function Suppliers() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showColdStartMessage, setShowColdStartMessage] = useState<boolean>(false);
 
   const [name, setName] = useState<string>('');
   const [contactName, setContactName] = useState<string>('');
@@ -25,20 +28,22 @@ function Suppliers() {
       const result = await getSuppliers();
       setSuppliers(result);
     } catch (err) {
-      setError('Failed to load suppliers.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    const timer = setTimeout(() => setShowColdStartMessage(true), 5000);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchSuppliers();
+    fetchSuppliers().finally(() => clearTimeout(timer));
   }, []);
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
     try {
       await createSupplier({
         name,
@@ -54,7 +59,8 @@ function Suppliers() {
       setAddress('');
       await fetchSuppliers();
     } catch (err) {
-      setError('Failed to create supplier.');
+      setError(getErrorMessage(err));
+      setFieldErrors(getFieldErrors(err));
     }
   }
 
@@ -68,6 +74,8 @@ function Suppliers() {
   }
 
   async function handleUpdate(id: number) {
+    setError(null);
+    setFieldErrors({});
     try {
       await updateSupplier(id, {
         name: editName,
@@ -79,7 +87,8 @@ function Suppliers() {
       setEditingId(null);
       await fetchSuppliers();
     } catch (err) {
-      setError('Failed to update supplier.');
+      setError(getErrorMessage(err));
+      setFieldErrors(getFieldErrors(err));
     }
   }
 
@@ -90,7 +99,7 @@ function Suppliers() {
       await deleteSupplier(id);
       await fetchSuppliers();
     } catch (err) {
-      setError('Failed to delete supplier.');
+      setError(getErrorMessage(err));
     }
   }
 
@@ -104,35 +113,50 @@ function Suppliers() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Supplier name"
         />
+        {fieldErrors.name && <span>{fieldErrors.name}</span>}
+
         <input
           type="text"
           value={contactName}
           onChange={(e) => setContactName(e.target.value)}
           placeholder="Contact name (optional)"
         />
+        {fieldErrors.contact_name && <span>{fieldErrors.contact_name}</span>}
+
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email (optional)"
         />
+        {fieldErrors.email && <span>{fieldErrors.email}</span>}
+
         <input
           type="text"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="Phone (optional)"
         />
+        {fieldErrors.phone && <span>{fieldErrors.phone}</span>}
+
         <input
           type="text"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           placeholder="Address (optional)"
         />
+        {fieldErrors.address && <span>{fieldErrors.address}</span>}
+
         <button type="submit">Add Supplier</button>
       </form>
       {error && <p>{error}</p>}
       {loading ? (
-        <p>Loading...</p>
+        <div>
+          <p>Loading...</p>
+          {showColdStartMessage && (
+            <p>The server may be waking up from inactivity — this can take up to a minute on the first request.</p>
+          )}
+        </div>
       ) : (
         <ul>
           {suppliers.map((supplier) => (

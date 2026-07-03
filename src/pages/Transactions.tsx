@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getTransactions, createTransaction } from '../api/transactions';
 import { getProducts } from '../api/products';
 import type { TransactionWithRelations, ProductWithRelations } from '../types/api';
+import { getErrorMessage, getFieldErrors } from '../utils/errors';
 
 function getSignedQuantity(
   type: 'purchase' | 'sale' | 'adjustment',
@@ -24,6 +25,8 @@ function Transactions() {
   const [products, setProducts] = useState<ProductWithRelations[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showColdStartMessage, setShowColdStartMessage] = useState<boolean>(false);
 
   const [productId, setProductId] = useState<number>(0);
   const [type, setType] = useState<'purchase' | 'sale' | 'adjustment'>('purchase');
@@ -40,20 +43,22 @@ function Transactions() {
       setTransactions(transactionsResult);
       setProducts(productsResult);
     } catch (err) {
-      setError('Failed to load transaction data.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    const timer = setTimeout(() => setShowColdStartMessage(true), 5000);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchAll();
+    fetchAll().finally(() => clearTimeout(timer));
   }, []);
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
     if (productId === 0) {
       setError('Please select a product.');
@@ -77,7 +82,8 @@ function Transactions() {
       setNotes('');
       await fetchAll();
     } catch (err) {
-      setError('Failed to create transaction.');
+      setError(getErrorMessage(err));
+      setFieldErrors(getFieldErrors(err));
     }
   }
 
@@ -97,6 +103,7 @@ function Transactions() {
             </option>
           ))}
         </select>
+        {fieldErrors.product_id && <span>{fieldErrors.product_id}</span>}
 
         <select
           value={type}
@@ -106,6 +113,7 @@ function Transactions() {
           <option value="sale">Sale</option>
           <option value="adjustment">Adjustment</option>
         </select>
+        {fieldErrors.type && <span>{fieldErrors.type}</span>}
 
         <input
           type="number"
@@ -113,6 +121,7 @@ function Transactions() {
           onChange={(e) => setQuantity(Number(e.target.value))}
           placeholder="Quantity"
         />
+        {fieldErrors.quantity && <span>{fieldErrors.quantity}</span>}
 
         {type === 'adjustment' && (
           <select
@@ -130,6 +139,7 @@ function Transactions() {
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Notes (optional)"
         />
+        {fieldErrors.notes && <span>{fieldErrors.notes}</span>}
 
         <button type="submit">Add Transaction</button>
       </form>
@@ -137,7 +147,12 @@ function Transactions() {
       {error && <p>{error}</p>}
 
       {loading ? (
-        <p>Loading...</p>
+        <div>
+          <p>Loading...</p>
+          {showColdStartMessage && (
+            <p>The server may be waking up from inactivity — this can take up to a minute on the first request.</p>
+          )}
+        </div>
       ) : (
         <ul>
           {transactions.map((transaction) => (

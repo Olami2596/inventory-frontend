@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { getDashboard } from '../api/dashboard';
 import type { DashboardSummary } from '../types/api';
+import { getErrorMessage } from '../utils/errors';
 
 function Dashboard() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showColdStartMessage, setShowColdStartMessage] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -13,16 +15,25 @@ function Dashboard() {
         const result = await getDashboard();
         setData(result);
       } catch (err) {
-        setError('Failed to load dashboard data.');
+        setError(getErrorMessage(err));
       } finally {
         setLoading(false);
       }
     }
-    fetchDashboard();
+
+    const timer = setTimeout(() => setShowColdStartMessage(true), 5000);
+    fetchDashboard().finally(() => clearTimeout(timer));
   }, []);
 
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <div>
+        <p>Loading...</p>
+        {showColdStartMessage && (
+          <p>The server may be waking up from inactivity — this can take up to a minute on the first request.</p>
+        )}
+      </div>
+    );
   }
 
   if (error) {

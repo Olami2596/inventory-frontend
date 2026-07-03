@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { register } from '../../api/auth';
 import { useAuthStore } from '../../store/auth';
+import { getErrorMessage, getFieldErrors } from '../../utils/errors';
 
 interface RegisterFormData {
   company_name: string;
@@ -26,6 +27,7 @@ function Register() {
     owner_password_confirmation: '',
   });
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -38,6 +40,7 @@ function Register() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
     try {
       const { user, token } = await register({
@@ -47,7 +50,8 @@ function Register() {
       setAuth(token, user);
       navigate('/dashboard');
     } catch (err) {
-      setError('Registration failed. Please check your details and try again.');
+      setError(getErrorMessage(err));
+      setFieldErrors(getFieldErrors(err));
     }
   }
 
@@ -60,6 +64,8 @@ function Register() {
         onChange={handleChange}
         placeholder="Company Name"
       />
+      {fieldErrors.company_name && <span>{fieldErrors.company_name}</span>}
+
       <input
         type="email"
         name="company_email"
@@ -67,6 +73,8 @@ function Register() {
         onChange={handleChange}
         placeholder="Company Email"
       />
+      {fieldErrors.company_email && <span>{fieldErrors.company_email}</span>}
+
       <input
         type="text"
         name="company_phone"
@@ -74,6 +82,8 @@ function Register() {
         onChange={handleChange}
         placeholder="Company Phone"
       />
+      {fieldErrors.company_phone && <span>{fieldErrors.company_phone}</span>}
+
       <input
         type="text"
         name="company_address"
@@ -81,6 +91,8 @@ function Register() {
         onChange={handleChange}
         placeholder="Company Address (optional)"
       />
+      {fieldErrors.company_address && <span>{fieldErrors.company_address}</span>}
+
       <input
         type="text"
         name="owner_name"
@@ -88,6 +100,8 @@ function Register() {
         onChange={handleChange}
         placeholder="Owner Name"
       />
+      {fieldErrors.owner_name && <span>{fieldErrors.owner_name}</span>}
+
       <input
         type="email"
         name="owner_email"
@@ -95,6 +109,8 @@ function Register() {
         onChange={handleChange}
         placeholder="Owner Email"
       />
+      {fieldErrors.owner_email && <span>{fieldErrors.owner_email}</span>}
+
       <input
         type="password"
         name="owner_password"
@@ -102,6 +118,8 @@ function Register() {
         onChange={handleChange}
         placeholder="Password"
       />
+      {fieldErrors.owner_password && <span>{fieldErrors.owner_password}</span>}
+
       <input
         type="password"
         name="owner_password_confirmation"
@@ -109,6 +127,8 @@ function Register() {
         onChange={handleChange}
         placeholder="Confirm Password"
       />
+      {fieldErrors.owner_password_confirmation && <span>{fieldErrors.owner_password_confirmation}</span>}
+
       {error && <p>{error}</p>}
       <button type="submit">Register</button>
     </form>

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../api/categories';
 import type { Category } from '../types/api';
+import { getErrorMessage, getFieldErrors } from '../utils/errors';
 
 function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showColdStartMessage, setShowColdStartMessage] = useState<boolean>(false);
 
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -19,27 +22,30 @@ function Categories() {
       const result = await getCategories();
       setCategories(result);
     } catch (err) {
-      setError('Failed to load categories.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    const timer = setTimeout(() => setShowColdStartMessage(true), 5000);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchCategories();
+    fetchCategories().finally(() => clearTimeout(timer));
   }, []);
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
     try {
       await createCategory({ name, description: description || null });
       setName('');
       setDescription('');
       await fetchCategories();
     } catch (err) {
-      setError('Failed to create category.');
+      setError(getErrorMessage(err));
+      setFieldErrors(getFieldErrors(err));
     }
   }
 
@@ -50,12 +56,15 @@ function Categories() {
   }
 
   async function handleUpdate(id: number) {
+    setError(null);
+    setFieldErrors({});
     try {
       await updateCategory(id, { name: editName, description: editDescription || null });
       setEditingId(null);
       await fetchCategories();
     } catch (err) {
-      setError('Failed to update category.');
+      setError(getErrorMessage(err));
+      setFieldErrors(getFieldErrors(err));
     }
   }
 
@@ -66,7 +75,7 @@ function Categories() {
       await deleteCategory(id);
       await fetchCategories();
     } catch (err) {
-      setError('Failed to delete category.');
+      setError(getErrorMessage(err));
     }
   }
 
@@ -80,17 +89,26 @@ function Categories() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Category name"
         />
+        {fieldErrors.name && <span>{fieldErrors.name}</span>}
+
         <input
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Description (optional)"
         />
+        {fieldErrors.description && <span>{fieldErrors.description}</span>}
+
         <button type="submit">Add Category</button>
       </form>
       {error && <p>{error}</p>}
       {loading ? (
-        <p>Loading...</p>
+        <div>
+          <p>Loading...</p>
+          {showColdStartMessage && (
+            <p>The server may be waking up from inactivity — this can take up to a minute on the first request.</p>
+          )}
+        </div>
       ) : (
         <ul>
           {categories.map((category) => (

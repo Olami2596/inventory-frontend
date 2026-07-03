@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { getUsers, deactivateUser, reactivateUser, revokeUserSessions } from '../api/users';
 import { usePermission } from '../hooks/usePermission';
 import type { User } from '../types/api';
+import { getErrorMessage } from '../utils/errors';
 
 function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showColdStartMessage, setShowColdStartMessage] = useState<boolean>(false);
 
   const { canDeactivate, canReactivate, canRevokeSessions } = usePermission();
 
@@ -15,15 +17,16 @@ function Users() {
       const result = await getUsers();
       setUsers(result);
     } catch (err) {
-      setError('Failed to load users.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchUsers();
+    const timer = setTimeout(() => setShowColdStartMessage(true), 5000);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchUsers().finally(() => clearTimeout(timer));
   }, []);
 
   async function handleDeactivate(id: number) {
@@ -33,7 +36,7 @@ function Users() {
       await deactivateUser(id);
       await fetchUsers();
     } catch (err) {
-      setError('Failed to deactivate user.');
+      setError(getErrorMessage(err));
     }
   }
 
@@ -42,7 +45,7 @@ function Users() {
       await reactivateUser(id);
       await fetchUsers();
     } catch (err) {
-      setError('Failed to reactivate user.');
+      setError(getErrorMessage(err));
     }
   }
 
@@ -53,7 +56,7 @@ function Users() {
       await revokeUserSessions(id);
       await fetchUsers();
     } catch (err) {
-      setError('Failed to revoke sessions.');
+      setError(getErrorMessage(err));
     }
   }
 
@@ -64,7 +67,12 @@ function Users() {
       {error && <p>{error}</p>}
 
       {loading ? (
-        <p>Loading...</p>
+        <div>
+          <p>Loading...</p>
+          {showColdStartMessage && (
+            <p>The server may be waking up from inactivity — this can take up to a minute on the first request.</p>
+          )}
+        </div>
       ) : (
         <ul>
           {users.map((user) => {
