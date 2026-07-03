@@ -5,6 +5,23 @@ import type { TransactionWithRelations, ProductWithRelations } from '../types/ap
 import { getErrorMessage, getFieldErrors } from '../utils/errors';
 import { format, parseISO } from 'date-fns';
 
+const inputClass =
+  'w-full bg-background border border-ink/15 rounded-lg px-3 py-2 text-sm placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors';
+
+const selectClass =
+  'w-full bg-background border border-ink/15 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors appearance-none cursor-pointer';
+
+const cardHover =
+  'transition-all duration-150 hover:border-accent/40 hover:shadow-md hover:shadow-ink/5 hover:-translate-y-0.5';
+
+function getRailColor(quantity: number): string {
+  return quantity >= 0 ? 'border-l-accent' : 'border-l-danger';
+}
+
+function getQuantityTextColor(quantity: number): string {
+  return quantity >= 0 ? 'text-accent' : 'text-danger';
+}
+
 function getSignedQuantity(
   type: 'purchase' | 'sale' | 'adjustment',
   quantity: number,
@@ -88,86 +105,138 @@ function Transactions() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-ink/60">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        <p className="mt-4 text-sm">Loading transactions…</p>
+        {showColdStartMessage && (
+          <p className="mt-2 text-sm text-warning max-w-xs text-center">
+            The server may be waking up from inactivity — this can take up to a minute on the first request.
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
-      <h1>Transactions</h1>
+      <h1 className="font-display text-2xl font-semibold tracking-tight mb-6">Transactions</h1>
 
-      <form onSubmit={handleCreate}>
-        <select
-          value={productId}
-          onChange={(e) => setProductId(Number(e.target.value))}
-        >
-          <option value={0}>Select a product</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name}
-            </option>
-          ))}
-        </select>
-        {fieldErrors.product_id && <span>{fieldErrors.product_id}</span>}
-
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value as 'purchase' | 'sale' | 'adjustment')}
-        >
-          <option value="purchase">Purchase</option>
-          <option value="sale">Sale</option>
-          <option value="adjustment">Adjustment</option>
-        </select>
-        {fieldErrors.type && <span>{fieldErrors.type}</span>}
-
-        <input
-          type="number"
-          value={quantity}
-          onChange={(e) => setQuantity(Number(e.target.value))}
-          placeholder="Quantity"
-        />
-        {fieldErrors.quantity && <span>{fieldErrors.quantity}</span>}
-
-        {type === 'adjustment' && (
-          <select
-            value={adjustmentDirection}
-            onChange={(e) => setAdjustmentDirection(e.target.value as 'increase' | 'decrease')}
-          >
-            <option value="increase">Increase</option>
-            <option value="decrease">Decrease</option>
-          </select>
-        )}
-
-        <input
-          type="text"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes (optional)"
-        />
-        {fieldErrors.notes && <span>{fieldErrors.notes}</span>}
-
-        <button type="submit">Add Transaction</button>
-      </form>
-
-      {error && <p>{error}</p>}
-
-      {loading ? (
-        <div>
-          <p>Loading...</p>
-          {showColdStartMessage && (
-            <p>The server may be waking up from inactivity — this can take up to a minute on the first request.</p>
-          )}
+      {error && (
+        <div className="bg-danger/10 border border-danger/20 text-danger rounded-xl p-4 text-sm mb-4">
+          {error}
         </div>
-      ) : (
-        <ul>
-          {transactions.map((transaction) => (
-            <li key={transaction.id}>
-              <strong>{transaction.product.name}</strong>
-              <span> — {transaction.type}</span>
-              <span> — {transaction.quantity}</span>
-              {transaction.notes && <span> — {transaction.notes}</span>}
-              {transaction.creator?.name && <span> — by {transaction.creator.name}</span>}
-              <span> — {format(parseISO(transaction.created_at), 'MMM d, yyyy h:mm a')}</span>
-            </li>
-          ))}
-        </ul>
       )}
+
+      <div className="bg-surface border border-ink/10 rounded-xl p-5 mb-6">
+        <form onSubmit={handleCreate} className="space-y-3">
+          <div>
+            <select
+              value={productId}
+              onChange={(e) => setProductId(Number(e.target.value))}
+              className={selectClass}
+            >
+              <option value={0}>Select a product</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.product_id && (
+              <p className="text-xs text-danger mt-1">{fieldErrors.product_id}</p>
+            )}
+          </div>
+
+          <div>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as 'purchase' | 'sale' | 'adjustment')}
+              className={selectClass}
+            >
+              <option value="purchase">Purchase</option>
+              <option value="sale">Sale</option>
+              <option value="adjustment">Adjustment</option>
+            </select>
+            {fieldErrors.type && <p className="text-xs text-danger mt-1">{fieldErrors.type}</p>}
+          </div>
+
+          <div>
+            <input
+              type="number"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              placeholder="Quantity"
+              className={inputClass}
+            />
+            {fieldErrors.quantity && (
+              <p className="text-xs text-danger mt-1">{fieldErrors.quantity}</p>
+            )}
+          </div>
+
+          {type === 'adjustment' && (
+            <select
+              value={adjustmentDirection}
+              onChange={(e) => setAdjustmentDirection(e.target.value as 'increase' | 'decrease')}
+              className={selectClass}
+            >
+              <option value="increase">Increase</option>
+              <option value="decrease">Decrease</option>
+            </select>
+          )}
+
+          <div>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notes (optional)"
+              className={inputClass}
+            />
+            {fieldErrors.notes && <p className="text-xs text-danger mt-1">{fieldErrors.notes}</p>}
+          </div>
+
+          <button
+            type="submit"
+            className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 active:scale-[0.98] transition-all"
+          >
+            Add Transaction
+          </button>
+        </form>
+      </div>
+
+      <div className="space-y-2">
+        {transactions.map((transaction) => (
+          <div
+            key={transaction.id}
+            className={`bg-surface border-l-[3px] ${getRailColor(
+              transaction.quantity
+            )} border-y border-r border-ink/10 rounded-lg px-4 py-3 flex items-start justify-between gap-4 ${cardHover}`}
+          >
+            <div className="space-y-0.5 flex-1 min-w-0">
+              <p className="font-medium text-sm">{transaction.product.name}</p>
+              <p className="text-sm text-ink/60 capitalize">{transaction.type}</p>
+              {transaction.creator?.name && (
+                <p className="text-xs text-ink/50">by {transaction.creator.name}</p>
+              )}
+              {transaction.notes && (
+                <p className="text-sm text-ink/60">{transaction.notes}</p>
+              )}
+            </div>
+
+            <div className="text-right shrink-0">
+              <p className={`font-mono text-sm font-semibold ${getQuantityTextColor(transaction.quantity)}`}>
+                {transaction.quantity > 0 ? '+' : ''}
+                {transaction.quantity}
+              </p>
+              <p className="text-xs text-ink/50 mt-0.5">
+                {format(parseISO(transaction.created_at), 'MMM d, yyyy h:mm a')}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
