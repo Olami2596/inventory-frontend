@@ -150,11 +150,11 @@ function Dashboard() {
                   transaction.quantity
                 )} border-y border-r border-ink/10 rounded-lg px-4 py-3 ${cardHover}`}
               >
-                <div>
-                  <span className="font-medium text-sm">{transaction.product.name}</span>
-                  <span className="text-sm text-ink/60"> — {transaction.type}</span>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{transaction.product.name}</p>
+                  <p className="text-sm text-ink/60 capitalize">{transaction.type}</p>
                   {transaction.creator?.name && (
-                    <span className="text-sm text-ink/60"> — by {transaction.creator.name}</span>
+                    <p className="text-xs text-ink/50">by {transaction.creator.name}</p>
                   )}
                 </div>
                 <div className="text-right">

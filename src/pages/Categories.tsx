@@ -186,12 +186,12 @@ function Categories() {
               </div>
             ) : (
               <>
-                <div>
-                  <span className="font-medium text-sm">{category.name}</span>
-                  {category.description && (
-                    <span className="text-sm text-ink/60"> — {category.description}</span>
-                  )}
-                </div>
+              <div>
+                <p className="font-medium text-sm">{category.name}</p>
+                {category.description && (
+                  <p className="text-sm text-ink/60 mt-0.5">{category.description}</p>
+                )}
+              </div>
                 {canManageStructure && (
                   <div className="flex gap-2">
                     <button
