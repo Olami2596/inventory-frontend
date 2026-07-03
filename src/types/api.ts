@@ -42,3 +42,15 @@ export interface Category {
   created_at: string;
   updated_at: string;
 }
+
+export interface Supplier {
+  id: number;
+  company_id: number;
+  name: string;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  created_at: string;
+  updated_at: string;
+}
