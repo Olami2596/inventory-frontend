@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, FolderTree, Truck, Package, ArrowLeftRight,
   Mail, Users as UsersIcon, Moon, Sun, LogOut, ShieldOff,
@@ -10,6 +10,8 @@ import { revokeMySessions } from '../../api/users';
 import { useAuthStore } from '../../store/auth';
 import { usePermission } from '../../hooks/usePermission';
 import { useDarkMode } from '../../hooks/useDarkMode';
+import HelpModal, { HelpButton } from '../HelpModal';
+import { pageHelp } from '../../utils/pageHelp';
 
 interface LayoutProps {
   children: ReactNode;
@@ -23,11 +25,15 @@ interface NavItem {
 
 function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  const { canManageUsers } = usePermission();
+  const { canManageUsers, canManageStructure } = usePermission();
   const { isDark, toggleDark } = useDarkMode();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState<boolean>(false);
+  const [showHelp, setShowHelp] = useState<boolean>(false);
+
+  const currentHelp = pageHelp[location.pathname];
 
   async function handleLogout() {
     try {
@@ -146,11 +152,26 @@ function Layout({ children }: LayoutProps) {
         </div>
       </aside>
 
-      <main
-        className={`p-6 transition-all duration-200 ${desktopCollapsed ? 'md:ml-16' : 'md:ml-64'}`}
-      >
-        {children}
-      </main>
+      <div className={desktopCollapsed ? 'md:ml-16' : 'md:ml-64'}>
+        {currentHelp && (
+          <div className="flex justify-end px-6 pt-4">
+            <HelpButton onClick={() => setShowHelp(true)} />
+          </div>
+        )}
+        <main className="p-6">{children}</main>
+      </div>
+
+      {showHelp && currentHelp && (
+        <HelpModal title={currentHelp.title} onClose={() => setShowHelp(false)}>
+          <p>{currentHelp.description}</p>
+          <ul className="list-disc list-inside space-y-1">
+            {currentHelp.everyone.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+            {canManageStructure && currentHelp.managers?.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </HelpModal>
+      )}
     </div>
   );
 }
